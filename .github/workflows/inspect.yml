@@ -1,0 +1,22 @@
+name: 檢查資料（第一次設定用）
+
+on:
+  workflow_dispatch:
+    inputs:
+      stock_id:
+        description: "股票代號"
+        default: "2330"
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python inspect_stock.py ${{ inputs.stock_id }}
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
