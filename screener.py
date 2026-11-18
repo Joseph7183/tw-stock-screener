@@ -153,7 +153,7 @@ def main(limit=None, dry_run=False):
                 "資產類型": nt.select("個股"),
                 "投資定位": nt.select("觀察"),
                 "交易所": nt.select(r["market"]),
-                "產業": nt.select(INDUSTRY_MAP.get(r["industry"], "其他")),
+                "產業": nt.select(INDUSTRY_MAP.get(r["industry"], r["industry"] or "其他")),
             })
             nt.create_page(props)
             added += 1
