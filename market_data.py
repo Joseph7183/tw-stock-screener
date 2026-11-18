@@ -32,10 +32,18 @@ def _first(row, *keys):
     return None
 
 
-def _get_json(url):
-    r = requests.get(url, timeout=60, headers={"User-Agent": "Mozilla/5.0"})
-    r.raise_for_status()
-    return r.json()
+def _get_json(url, tries=4):
+    """抓證交所／櫃買資料，失敗會重試；全部失敗回傳空清單，讓另一個市場照常更新。"""
+    for i in range(tries):
+        try:
+            r = requests.get(url, timeout=60, headers={"User-Agent": "Mozilla/5.0"})
+            r.raise_for_status()
+            return r.json()
+        except (requests.RequestException, ValueError) as e:
+            print(f"  {url} 第 {i + 1} 次失敗：{type(e).__name__}")
+            time.sleep(10 * (i + 1))
+    print(f"  ⚠ {url} 抓不到，這次略過")
+    return []
 
 
 def market_snapshot():
