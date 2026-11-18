@@ -46,6 +46,7 @@ def market_snapshot():
         if sid:
             rows[sid] = {"stock_id": sid, "name": _first(row, "Name"), "market": "TWSE",
                          "close": _to_float(_first(row, "ClosingPrice")),
+                         "change": _to_float(_first(row, "Change")),
                          "trade_value": _to_float(_first(row, "TradeValue")), "pe": None, "div_yield": None}
     for row in _get_json(TWSE_PE_ALL):
         sid = _first(row, "Code")
@@ -58,6 +59,7 @@ def market_snapshot():
         if sid:
             rows[sid] = {"stock_id": sid, "name": _first(row, "CompanyName", "Name"), "market": "TPEX",
                          "close": _to_float(_first(row, "Close", "ClosingPrice")),
+                         "change": _to_float(_first(row, "Change")),
                          "trade_value": _to_float(_first(row, "TransactionAmount", "TradeValue")), "pe": None, "div_yield": None}
     for row in _get_json(TPEX_PE_ALL):
         sid = _first(row, "SecuritiesCompanyCode", "Code")
