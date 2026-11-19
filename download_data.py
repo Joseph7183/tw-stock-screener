@@ -45,7 +45,7 @@ def fetch(dataset, sid):
 
 
 def universe():
-    """一般股（含已下市），排除 ETF、權證、金融業。"""
+    """上市櫃一般股（含已下市），排除 ETF、權證、金融業、興櫃。"""
     info = finmind("TaiwanStockInfo", years=None)
     info = info.drop_duplicates("stock_id", keep="last")
     try:
@@ -59,6 +59,7 @@ def universe():
     allx = allx.drop_duplicates("stock_id", keep="first")
     allx = allx[allx["stock_id"].astype(str).str.fullmatch(r"[1-9]\d{3}")]
     allx = allx[~allx["industry_category"].isin(EXCLUDED_INDUSTRIES)]
+    allx = allx[allx["type"].fillna("") != "emerging"]  # 興櫃不在選股範圍內
     return allx.sort_values("stock_id")
 
 
