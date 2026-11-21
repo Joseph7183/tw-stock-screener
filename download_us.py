@@ -133,6 +133,15 @@ def main():
         p = f"{OUT}/prices/{t}.csv.gz"
         if not os.path.exists(p):
             df = prices(yt)
+            if df.empty and os.environ.get("FINMIND_TOKEN"):     # Yahoo 沒有的下市股改問 FinMind
+                from market_data import finmind
+                try:
+                    df = finmind("USStockPrice", t, years=15)
+                    if not df.empty:
+                        print(f"  {t} 改用 FinMind 股價：{len(df)} 筆", flush=True)
+                except Exception as e:
+                    print(f"  {t} FinMind 也沒有：{e}", flush=True)
+                    df = pd.DataFrame()
             if df.empty:
                 missing["prices"].append(t)
             else:
