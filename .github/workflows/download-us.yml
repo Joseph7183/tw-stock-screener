@@ -16,12 +16,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: 安裝套件（成分股名單套件由 GitHub 原始碼安裝，使用者已同意）
-        run: |
-          pip install -r requirements.txt yfinance
-          pip install "git+https://github.com/jmccarrell/n100tickers.git"
-          python -c "import nasdaq_100_ticker_history as n; print(sorted(n.tickers_as_of(2020, 6, 1))[:5])"
-      - name: 下載
+      # 成分股名單 data/us/ndx_members.csv 已存在 repo，平常不再安裝第三方套件。
+      # 要更新名單時，在自己電腦執行：pip install git+https://github.com/jmccarrell/n100tickers.git
+      #                                python download_us.py --members-only
+      - run: pip install -r requirements.txt yfinance
+      - name: 下載股價與財報
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python -u download_us.py

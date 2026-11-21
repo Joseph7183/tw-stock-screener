@@ -122,7 +122,11 @@ def prices(ticker):
 def main():
     os.makedirs(f"{OUT}/prices", exist_ok=True)
     os.makedirs(f"{OUT}/facts", exist_ok=True)
-    tickers = members()
+    import sys
+    if "--members-only" in sys.argv:          # 這一步會用到第三方套件，workflow 裡不給任何 token
+        members()
+        return
+    tickers = sorted(pd.read_csv(f"{OUT}/ndx_members.csv")["ticker"].unique())
     probe = requests.get("https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json", headers=UA, timeout=60)
     sec_ok = probe.status_code == 200
     print(f"SEC 連線測試：{probe.status_code}，{'可用' if sec_ok else '被擋：' + repr(probe.text[:300])}", flush=True)
