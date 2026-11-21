@@ -18,7 +18,19 @@ import pandas as pd
 import requests
 
 OUT = "data/us"
-UA = {"User-Agent": "tw-stock-screener research joseph7183@users.noreply.github.com"}
+UA = {"User-Agent": "Joseph7183 Research joseph7183@users.noreply.github.com",
+      "Accept-Encoding": "gzip, deflate"}
+
+
+def sec_get(url, **kw):
+    """SEC 有流量限制（每秒 10 次）且要求標明聯絡方式；失敗時印出原因並重試。"""
+    for attempt in range(4):
+        r = requests.get(url, headers=UA, timeout=120, **kw)
+        if r.status_code == 200:
+            return r
+        print(f"  SEC {r.status_code} {url[:80]}：{r.text[:200]!r}")
+        time.sleep(2 + attempt * 3)
+    return r
 START = "2012-01-01"            # 規則要 3 年財報，回測從 2016 起
 BENCH = ["QQQ"]                 # 那斯達克 100 本身（含息）
 
@@ -55,22 +67,27 @@ def members():
 
 
 def cik_map():
-    j = requests.get("https://www.sec.gov/files/company_tickers.json", headers=UA, timeout=60).json()
-    return {v["ticker"].upper(): str(v["cik_str"]).zfill(10) for v in j.values()}
+    r = sec_get("https://www.sec.gov/files/company_tickers.json")
+    if r.status_code == 200:
+        return {v["ticker"].upper(): str(v["cik_str"]).zfill(10) for v in r.json().values()}
+    r = sec_get("https://www.sec.gov/include/ticker.txt")       # 備用格式：ticker\tcik
+    if r.status_code == 200:
+        return {a.upper(): b.zfill(10) for a, b in (l.split("\t") for l in r.text.splitlines() if "\t" in l)}
+    print("⚠ SEC 代號對照表抓不到，改逐檔查詢")
+    return {}
 
 
 def cik_lookup(ticker):
     """舊代號（已下市、被併購）不在最新對照表，改用 EDGAR 查詢頁。"""
-    r = requests.get("https://www.sec.gov/cgi-bin/browse-edgar",
-                     params={"action": "getcompany", "CIK": ticker, "type": "10-K", "count": "1", "output": "atom"},
-                     headers=UA, timeout=60)
+    r = sec_get("https://www.sec.gov/cgi-bin/browse-edgar",
+                params={"action": "getcompany", "CIK": ticker, "type": "10-K", "count": "1", "output": "atom"})
     import re
     m = re.search(r"<cik>(\d+)</cik>", r.text)
     return m.group(1).zfill(10) if m else None
 
 
 def facts(ticker, cik):
-    r = requests.get(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json", headers=UA, timeout=120)
+    r = sec_get(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json")
     if r.status_code != 200:
         return pd.DataFrame()
     j = r.json().get("facts", {})
