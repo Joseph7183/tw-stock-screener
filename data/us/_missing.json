@@ -5,6 +5,7 @@
   "ANSS",
   "ATVI",
   "BRCM",
+  "CA",
   "CELG",
   "CERN",
   "CTRP",
@@ -39,5 +40,6 @@
   "XLNX",
   "YHOO"
  ],
- "facts": []
+ "facts": [],
+ "note": "CA：FinMind 的 CA 是 2023 年後的另一家公司（代號重複使用），已刪除。SEC 擋 GitHub Actions 連線（Undeclared Automated Tool），財報尚未下載。"
 }
