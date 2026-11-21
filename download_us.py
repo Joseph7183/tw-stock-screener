@@ -29,6 +29,8 @@ def sec_get(url, **kw):
         if r.status_code == 200:
             return r
         print(f"  SEC {r.status_code} {url[:80]}：{r.text[:200]!r}")
+        if r.status_code in (403, 404):
+            break                      # 被擋或查無此檔，重試沒用
         time.sleep(2 + attempt * 3)
     return r
 START = "2012-01-01"            # 規則要 3 年財報，回測從 2016 起
@@ -121,7 +123,10 @@ def main():
     os.makedirs(f"{OUT}/prices", exist_ok=True)
     os.makedirs(f"{OUT}/facts", exist_ok=True)
     tickers = members()
-    cmap = cik_map()
+    probe = requests.get("https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json", headers=UA, timeout=60)
+    sec_ok = probe.status_code == 200
+    print(f"SEC 連線測試：{probe.status_code}，{'可用' if sec_ok else '被擋：' + repr(probe.text[:300])}", flush=True)
+    cmap = cik_map() if sec_ok else {}
     missing = {"prices": [], "facts": []}
     for i, t in enumerate(tickers + BENCH, 1):
         yt = t.replace(".", "-")
@@ -136,7 +141,7 @@ def main():
         if t in BENCH:
             continue
         f = f"{OUT}/facts/{t}.csv.gz"
-        if not os.path.exists(f):
+        if sec_ok and not os.path.exists(f):
             cik = cmap.get(t.upper()) or cik_lookup(t)
             time.sleep(0.2)
             df = facts(t, cik) if cik else pd.DataFrame()
@@ -146,7 +151,8 @@ def main():
                 df.assign(cik=cik).to_csv(f, index=False)
             time.sleep(0.2)
         if i % 25 == 0:
-            print(f"  進度 {i}/{len(tickers) + len(BENCH)}")
+            print(f"  進度 {i}/{len(tickers) + len(BENCH)}，股價缺 {len(missing['prices'])}、財報缺 {len(missing['facts'])}", flush=True)
+            os.system("bash .github/save_us.sh >/dev/null 2>&1")
     with open(f"{OUT}/_missing.json", "w") as fh:
         json.dump(missing, fh, indent=1)
     print(f"完成。股價抓不到 {len(missing['prices'])} 檔：{missing['prices']}")
