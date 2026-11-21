@@ -16,7 +16,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -r requirements.txt yfinance nasdaq-100-ticker-history
+      - name: 安裝套件（成分股名單套件由 GitHub 原始碼安裝，使用者已同意）
+        run: |
+          pip install -r requirements.txt yfinance
+          pip install "git+https://github.com/jmccarrell/n100tickers.git"
+          python -c "import nasdaq_100_ticker_history as n; print(sorted(n.tickers_as_of(2020, 6, 1))[:5])"
       - name: 下載
         run: python download_us.py
       - name: 存檔
